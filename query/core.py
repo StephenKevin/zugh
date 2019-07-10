@@ -1,6 +1,7 @@
 
 from datetime import date, datetime
 from decimal import Decimal
+from .others import As
 
 
 class QueryBase:
@@ -36,7 +37,7 @@ class Select(SelectBase):
         self._where = where
         if fields or alias_fields:
             fs = [str(f) for f in fields]
-            af = [f'{f} AS {a}' for a, f in alias_fields.items()]
+            af = [f'{As(f, a)}' for a, f in alias_fields.items()]
             fs.extend(af)
             self.fields_str = ', '.join(fs)
         else:

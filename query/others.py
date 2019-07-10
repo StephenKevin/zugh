@@ -2,7 +2,7 @@
 class F:
 
     def __init__(self, field):
-        """F object for complex query"""
+        """F object for complex query. F object mean it is field instead str"""
         self._field = field
 
     def __str__(self):
@@ -57,3 +57,13 @@ class values:
 
     def __rsub__(self, value):
         return f'{value} - {self}'
+
+
+class As:
+
+    def __init__(self, entity, name: str):
+        self._entity = entity
+        self._alias = name
+
+    def __str__(self):
+        return f'{self._entity} AS {self._alias}'

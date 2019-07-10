@@ -58,8 +58,7 @@ class ComplexLogicBase(LogicBase):
     def __init__(self, *terms, **kw_terms):
         self.terms = []
         for term in terms:
-            if isinstance(term, LogicBase):
-                self._add(term)
+            self._add(term)
 
         for k, v in kw_terms.items():
             self._add(L(**{k: v}))

@@ -32,6 +32,7 @@ class L(LogicBase):
             self.value = terms[0]
         else:
             for k, v in kw_terms.items():
+                k = k.replace('__', '.')
                 if isinstance(v, ConditionBase):
                     self.value = f'{k}{v}'
                 elif isinstance(v, (str, Decimal, datetime, date)):

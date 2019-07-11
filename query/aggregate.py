@@ -1,11 +1,10 @@
+from .base import ExpressBase
 
-class AggregateBase:
+
+class AggregateBase(ExpressBase):
 
     def __init__(self, field):
-        self._field = str(field)
-
-    def __str__(self):
-        return f'{self._name}({self._field})'
+        self._value = f'{self._name}({field})'
 
 
 class Count(AggregateBase):

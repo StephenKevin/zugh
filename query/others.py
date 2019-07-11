@@ -1,69 +1,58 @@
+from .base import ExpBase
 
-class F:
+
+class F(ExpBase):
 
     def __init__(self, field):
         """F object for complex query. F object mean it is field instead str"""
-        self._field = field
-
-    def __str__(self):
-        return self._field
+        self._value = f'{field}'
 
     def __neg__(self):
-        return self.__class__(f'-{self._field}')
+        return self.__class__(f'-{self}')
 
-    def __add__(self, value):
-        return self.__class__(f'{self._field} + {value}')
+    def __add__(self, other):
+        return self.__class__(f'{self} + {other}')
 
-    def __radd__(self, value):
-        return self.__class__(f'{value} + {self._field}')
+    def __radd__(self, other):
+        return self.__class__(f'{other} + {self}')
 
-    def __sub__(self, value):
-        return self.__class__(f'{self} - {value}')
+    def __sub__(self, other):
+        return self.__class__(f'{self} - {other}')
 
-    def __rsub__(self, value):
-        return self.__class__(f'{value} - {self}')
+    def __rsub__(self, other):
+        return self.__class__(f'{other} - {self}')
 
 
-class distinct:
+class distinct(ExpBase):
     """distinct"""
 
     def __init__(self, field):
         """distinct object for DISTINCT keyword"""
-        self._field = field
-
-    def __str__(self):
-        return f'DISTINCT {self._field}'
+        self._value = f'DISTINCT {field}'
 
 
-class values:
+class values(ExpBase):
     def __init__(self, field):
         """values object for VALUES keyword"""
-        self._field = field
-
-    def __str__(self):
-        return f'VALUES({self._field})'
+        self._value = f'VALUES({field})'
 
     def __neg__(self):
-        return f'-VALUES({self._field})'
+        return f'-{self}'
 
-    def __add__(self, value):
-        return f'{self} + {value}'
+    def __add__(self, other):
+        return f'{self} + {other}'
 
-    def __radd__(self, value):
-        return f'{value} + {self}'
+    def __radd__(self, other):
+        return f'{other} + {self}'
 
-    def __sub__(self, value):
-        return f'{self} - {value}'
+    def __sub__(self, other):
+        return f'{self} - {other}'
 
-    def __rsub__(self, value):
-        return f'{value} - {self}'
+    def __rsub__(self, other):
+        return f'{other} - {self}'
 
 
-class As:
+class As(ExpBase):
 
     def __init__(self, entity, name: str):
-        self._entity = entity
-        self._alias = name
-
-    def __str__(self):
-        return f'{self._entity} AS {self._alias}'
+        self._value = f'{entity} AS {name}'

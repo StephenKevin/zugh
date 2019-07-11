@@ -3,10 +3,11 @@
 from datetime import date, datetime
 from decimal import Decimal
 
+from .base import ExpBase
 from .condition import ConditionBase
 
 
-class LogicBase:
+class LogicBase(ExpBase):
     """Logic class to deal with logic relation"""
 
     def __or__(self, term):
@@ -29,64 +30,59 @@ class L(LogicBase):
         if terms:
             if not isinstance(terms[0], str):
                 raise Exception('only accept string')
-            self.value = terms[0]
+            self._value = terms[0]
         else:
-            for k, v in kw_terms.items():
-                k = k.replace('__', '.')
-                if isinstance(v, ConditionBase):
-                    self.value = f'{k}{v}'
-                elif isinstance(v, (str, Decimal, datetime, date)):
-                    self.value = f"{k} = '{v}'"
-                else:
-                    self.value = f'{k} = {v}'
+            k, v = kw_terms.popitem()
+            k = k.replace('__', '.')
+            if isinstance(v, ConditionBase):
+                self._value = f'{k} {v}'
+            elif isinstance(v, (str, Decimal, datetime, date)):
+                self._value = f"{k} = '{v}'"
+            else:
+                self._value = f'{k} = {v}'
 
     def __eq__(self, item):
-        return self.value == str(item)
-
-    def __str__(self):
-        return self.value
+        return self._value == str(item)
 
     @property
     def get_str(self):
-        return self.value
+        return self._value
 
     def __repr__(self):
-        return f'L({self.value})'
+        return f'L({self})'
 
 
 class ComplexLogicBase(LogicBase):
 
     def __init__(self, *terms, **kw_terms):
-        self.terms = []
+        self._terms = []
         for term in terms:
             self._add(term)
 
         for k, v in kw_terms.items():
             self._add(L(**{k: v}))
 
+        self._value = f'({self.get_str})'
+
     def __iter__(self):
-        return iter(self.terms)
+        return iter(self._terms)
 
     def __len__(self):
-        return len(self.terms)
+        return len(self._terms)
 
     def __getitem__(self, key):
-        return self.terms[key]
+        return self._terms[key]
 
     def _add(self, term):
         if term not in self:
             if isinstance(term, LogicBase):
                 if isinstance(term, self.__class__):
-                    for t in terms:
-                        self.terms.append(term)
+                    for t in term:
+                        self._terms.append(t)
                 else:
-                    self.terms.append(term)
+                    self._terms.append(term)
             else:
-                self.terms.append(L(term))
-
-    def __str__(self):
-        """return the logic statement"""
-        return f'({self.get_str})'
+                self._terms.append(L(term))
 
     @property
     def get_str(self):

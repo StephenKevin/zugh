@@ -2,10 +2,11 @@
 from datetime import date, datetime
 from decimal import Decimal
 
+from .base import ExpBase
 from .core import Select
 
 
-class ConditionBase:
+class ConditionBase(ExpBase):
 
     _operator = '='
 
@@ -15,10 +16,7 @@ class ConditionBase:
             c_str = f"'{condition}'"
         else:
             c_str = str(condition)
-        self.statement = f' {self._operator} {c_str}'
-
-    def __str__(self):
-        return self.statement
+        self._value = f'{self._operator} {c_str}'
 
 
 class eq(ConditionBase):
@@ -70,7 +68,7 @@ class InBase(ConditionBase):
                 c_str_list.append(c_str)
             cc = ','.join(c_str_list)
 
-        self.statement = f' {self._operator} ({cc})'
+        self._value = f'{self._operator} ({cc})'
 
 
 class In(InBase):

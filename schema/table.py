@@ -10,11 +10,11 @@ class Table():
 
         self.db = db
         self.name = name
-        self.alias = As(self, alias)
         if db:
             self.full_name = db.name + self.name
         else:
             self.full_name = self.name
+        self.alias = As(self, alias)
 
     def where(self, *terms, **kw_terms):
         """return a `Where` query object"""

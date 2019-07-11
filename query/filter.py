@@ -1,6 +1,7 @@
 
+from .base import ExpBase
+from .core import Delete, QueryBase, Select, Update
 from .logic import AND
-from .core import QueryBase, Select, Update, Delete
 
 
 class Where(QueryBase):
@@ -15,12 +16,9 @@ class Where(QueryBase):
         self._tb = table
         if terms or kw_terms:
             logic = AND(*terms, **kw_terms)
-            self._clause = f' WHERE {logic.get_str}'
+            self._value = f'WHERE {logic.get_str}'
         else:
-            self._clause = ''
-
-    def __str__(self):
-        return self._clause
+            self._value = ''
 
     def select(self, *fields, **alias_fields):
         """"""

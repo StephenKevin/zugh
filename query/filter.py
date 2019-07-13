@@ -16,7 +16,7 @@ class Where(QueryBase):
         self._tb = table
         if terms or kw_terms:
             logic = AND(*terms, **kw_terms)
-            self._value = f'WHERE {logic.get_str}'
+            self._value = f'WHERE {logic}'
         else:
             self._value = ''
 

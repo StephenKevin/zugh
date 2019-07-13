@@ -44,10 +44,6 @@ class L(LogicBase):
     def __eq__(self, item):
         return self._value == str(item)
 
-    @property
-    def get_str(self):
-        return self._value
-
     def __repr__(self):
         return f'L({self})'
 
@@ -55,14 +51,23 @@ class L(LogicBase):
 class ComplexLogicBase(LogicBase):
 
     def __init__(self, *terms, **kw_terms):
+
         self._terms = []
+
         for term in terms:
             self._add(term)
-
         for k, v in kw_terms.items():
             self._add(L(**{k: v}))
 
-        self._value = f'({self.get_str})'
+        t_list = []
+        for t in self:
+            if isinstance(t, ComplexLogicBase):
+                t_str = f'({t})'
+            else:
+                t_str = f'{t}'
+            t_list.append(t_str)
+        oper = f' {self.__class__.__name__} '
+        self._value = oper.join(t_list)
 
     def __iter__(self):
         return iter(self._terms)
@@ -83,16 +88,6 @@ class ComplexLogicBase(LogicBase):
                     self._terms.append(term)
             else:
                 self._terms.append(L(term))
-
-    @property
-    def get_str(self):
-        if len(self) == 1:
-            return self[0].get_str
-        else:
-            term_list = [str(c) for c in self]
-            op = f' {self.__class__.__name__} '
-            v = op.join(term_list)
-            return f'{v}'
 
     def __repr__(self):
         term_list = [repr(c) for c in self]

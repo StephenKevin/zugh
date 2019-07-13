@@ -91,6 +91,7 @@ class Update(QueryBase):
     def __init__(self, where, kwargs):
         kv = []
         for k, v in kwargs.items():
+            k = k.replace('__', '.')
             if isinstance(v, (str, Decimal, datetime, date)):
                 kv.append(f"{k} = '{v}'")
             else:
@@ -102,8 +103,12 @@ class Update(QueryBase):
 class Delete(QueryBase):
     """"""
 
-    def __init__(self, where):
-        self._value = f"DELETE FROM {where._tb} {where}"
+    def __init__(self, where, tables):
+        if tables:
+            tables_str = ','.join([str(tb) for tb in tables])
+            self._value = f"DELETE {tables_str} FROM {where._tb} {where}"
+        else:
+            self._value = f"DELETE FROM {where._tb} {where}"
 
 
 class InsertBase(QueryBase):

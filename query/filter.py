@@ -31,6 +31,6 @@ class Where(QueryBase):
         """"""
         return Update(self, field_values)
 
-    def delete(self):
+    def delete(self, *tables):
         """"""
-        return Delete(self)
+        return Delete(self, tables)

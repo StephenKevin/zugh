@@ -96,7 +96,7 @@ class Update(QueryBase):
             else:
                 kv.append(f'{k} = {v}')
         kv_str = ', '.join(kv)
-        self._value = f"UPDATE TABLE {where._tb} SET {kv_str} {where}"
+        self._value = f"UPDATE {where._tb} SET {kv_str} {where}"
 
 
 class Delete(QueryBase):

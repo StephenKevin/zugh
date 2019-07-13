@@ -89,8 +89,22 @@ class DIV (ArithmeticBase):
 
 class MathFuncBase(ArithmeticBase):
     """Base for SQL-Function"""
-    
+
     def __init__(self, *values):
 
         params = ', '.join([str(v) for v in values if v is not None])
         self._value = f'{self.__class__.__name__.lower()}({params})'
+
+
+class FuncBase(ExpBase):
+
+    def __init__(self, *values):
+
+        params = ', '.join([str(v) for v in values if v is not None])
+        self._value = f'{self.__class__.__name__.lower()}({params})'
+
+
+class AggregateBase(ExpBase):
+
+    def __init__(self, field):
+        self._value = f'{self.__class__.__name__.lower()}({field})'

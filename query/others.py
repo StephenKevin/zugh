@@ -1,26 +1,11 @@
-from .base import ExpBase
+from .base import ExpBase, ArithmeticBase
 
 
-class F(ExpBase):
+class F(ArithmeticBase):
 
     def __init__(self, field):
         """F object for complex query. F object mean it is field instead str"""
         self._value = f'{field}'
-
-    def __neg__(self):
-        return self.__class__(f'-{self}')
-
-    def __add__(self, other):
-        return self.__class__(f'{self} + {other}')
-
-    def __radd__(self, other):
-        return self.__class__(f'{other} + {self}')
-
-    def __sub__(self, other):
-        return self.__class__(f'{self} - {other}')
-
-    def __rsub__(self, other):
-        return self.__class__(f'{other} - {self}')
 
 
 class distinct(ExpBase):
@@ -31,7 +16,7 @@ class distinct(ExpBase):
         self._value = f'DISTINCT {field}'
 
 
-class values(ExpBase):
+class values(ArithmeticBase):
     def __init__(self, field):
         """values object for VALUES keyword"""
         self._value = f'VALUES({field})'

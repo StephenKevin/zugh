@@ -4,19 +4,20 @@ from decimal import Decimal
 
 from .base import ExpBase
 from .core import Select
+from .others import F
 
 
 class ConditionBase(ExpBase):
 
-    _operator = '='
-
-    def __init__(self, condition):
+    def __init__(self, condition, operator=None):
         """"""
+
+        if operator is not None:
+            self._operator = operator
         if isinstance(condition, (str, Decimal, datetime, date)):
-            c_str = f"'{condition}'"
+            self._value = f"{self._operator} '{condition}'"
         else:
-            c_str = str(condition)
-        self._value = f'{self._operator} {c_str}'
+            self._value = f'{self._operator} {condition}'
 
 
 class eq(ConditionBase):
@@ -77,3 +78,8 @@ class In(InBase):
 
 class NIn(InBase):
     _operator = 'NOT IN '
+
+
+NULL = ConditionBase(F('NULL'), 'IS')
+
+NOT_NULL = ConditionBase(F('NOT NULL'), 'IS')

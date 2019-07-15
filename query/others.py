@@ -21,21 +21,6 @@ class values(ArithmeticBase):
         """values object for VALUES keyword"""
         self._value = f'VALUES({field})'
 
-    def __neg__(self):
-        return f'-{self}'
-
-    def __add__(self, other):
-        return f'{self} + {other}'
-
-    def __radd__(self, other):
-        return f'{other} + {self}'
-
-    def __sub__(self, other):
-        return f'{self} - {other}'
-
-    def __rsub__(self, other):
-        return f'{other} - {self}'
-
 
 class As(ExpBase):
 

@@ -15,23 +15,28 @@ class QueryBase(ExpBase):
 
 
 class SelectBase(QueryBase):
+    """Base for retrieve"""
+
+
+class LimitMixin(SelectBase):
 
     def __getitem__(self, key):
         """support slice for select query"""
+
         if not isinstance(key, slice):
             raise Exception(
                 'unsupport index, please condiser using slice instead')
-        if key.start < 0 or key.stop < 0:
+        start = key.start or 0
+        stop = key.stop or 18446744073709551616
+        if start < 0 or stop < 0:
             raise Exception('unsupport negative slice')
-        if key.stop <= key.start:
+        if stop <= start:
             raise Exception('slice.stop must great than slice.start')
 
-        offset = key.start
-        length = key.stop - key.start
-        return Limit(self, length, offset)
+        return Limit(self, stop - start, start)
 
 
-class Select(SelectBase):
+class Select(LimitMixin):
     """"""
 
     def __init__(self, where, fields: tuple = None, alias_fields: dict = None):
@@ -53,7 +58,7 @@ class Select(SelectBase):
         return GroupBy(self, fields)
 
 
-class OrderBy(SelectBase):
+class OrderBy(LimitMixin):
 
     def __init__(self, select, fields):
         f_str = []
@@ -66,7 +71,7 @@ class OrderBy(SelectBase):
         self._value = f"{select} ORDER BY {', '.join(f_str)}"
 
 
-class GroupBy(SelectBase):
+class GroupBy(LimitMixin):
     """"""
 
     def __init__(self, select, fields):
@@ -76,9 +81,10 @@ class GroupBy(SelectBase):
         return OrderBy(self, fields)
 
 
-class Limit(QueryBase):
+class Limit(SelectBase):
 
     def __init__(self, select, length, offset=None):
+        """Limit"""
         if offset:
             self._value = f'{select} LIMIT {offset}, {length}'
         else:

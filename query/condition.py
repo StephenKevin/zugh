@@ -3,7 +3,7 @@ from datetime import date, datetime
 from decimal import Decimal
 
 from .base import ExpBase
-from .core import Select
+from .core import SelectBase
 from .others import F
 
 
@@ -52,15 +52,18 @@ class unlike(ConditionBase):
     _operator = 'NOT LIKE'
 
 
-class InBase(ConditionBase):
-    """"""
+class In(ConditionBase):
+    """IN"""
+
+    _operator = 'IN'
 
     def __init__(self, *conditions):
-        """`conditions` must be a `iterable` or a `query.Select` object"""
-        c_str_list = []
-        if isinstance(conditions[0], Select):
-            cc = str(conditions)
+        """ condition could be str, int as well as `query.SelectBase` instance"""
+        
+        if isinstance(conditions[0], SelectBase):
+            cc = str(conditions[0])
         else:
+            c_str_list = []
             for c in conditions:
                 if isinstance(c, (str, Decimal, datetime, date)):
                     c_str = f"'{c}'"
@@ -72,12 +75,10 @@ class InBase(ConditionBase):
         self._value = f'{self._operator} ({cc})'
 
 
-class In(InBase):
-    _operator = 'IN'
+class NIn(In):
+    """NOT IN"""
 
-
-class NIn(InBase):
-    _operator = 'NOT IN '
+    _operator = 'NOT IN'
 
 
 NULL = ConditionBase(F('NULL'), 'IS')

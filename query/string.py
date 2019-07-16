@@ -7,7 +7,7 @@ class S(ExpBase):
     def __init__(self, s):
         """S object mean it is str instead field. It is useful in string function.
         """
-        self._value = f"'{self.value}'"
+        self._value = f"'{s}'"
 
 
 class Ascii(FuncBase):
@@ -24,7 +24,7 @@ class Concat(FuncBase):
         wrap the string. For example, `concat('field1', S('_ex'))` will generate
         SQL snippet `concat(field1, '_ex')`
         """
-        return super().__init__(*values)
+        return super().__init__(*s)
 
 
 Cat = Concat
@@ -91,7 +91,7 @@ class Repeat(FuncBase):
 class Replace(FuncBase):
 
     def __init__(self, s1, s2):
-        return super().__init__(a, b)
+        return super().__init__(s1, s2)
 
 
 class Strcmp(FuncBase):

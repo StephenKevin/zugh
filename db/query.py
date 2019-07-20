@@ -15,9 +15,13 @@ def execute_commit(connection, query):
     """Execute INSERT, UPDATE, DELETE sql"""
 
     sql = str(query)
-    with connection.cursor() as cursor:
-        row = cursor.execute(sql)
-    connection.commit()
+    try:
+        with connection.cursor() as cursor:
+            row = cursor.execute(sql)
+        connection.commit()
+    except Exception as e:
+        connection.rollback()
+        raise e
     return row
 
 
@@ -36,10 +40,10 @@ def execute_transaction(connection, queries):
     sqls = [str(query) for query in queries]
 
     connection.begin()
-    with connection.cursor() as cursor:
-        for sql in sqls:
-            cursor.execute(sql)
     try:
+        with connection.cursor() as cursor:
+            for sql in sqls:
+                cursor.execute(sql)
         connection.commit()
     except Exception as e:
         connection.rollback()

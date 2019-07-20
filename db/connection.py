@@ -9,6 +9,7 @@ def connect_config(host: str, user: str, password: str = "", database: str = Non
         config['password'] = password
     if database:
         config['database'] = database
+    return config
 
 
 class ConnectionContext():

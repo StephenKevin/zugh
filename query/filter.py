@@ -1,10 +1,9 @@
-
 from .base import ExpBase
-from .core import Delete, QueryBase, Select, Update
+from .core import Delete, Select, Update
 from .logic import AND
 
 
-class Where(QueryBase):
+class Where(ExpBase):
     """"""
 
     def __init__(self, table, terms=None, kw_terms=None):
@@ -13,7 +12,10 @@ class Where(QueryBase):
         complex logic, looking into `logic.AND` and `logic.OR`.
         You can use those logic class to combine all the situation.
         """
-        self._tb = table
+
+        self.table = table
+        self.conn_config = table.conn_config
+        self.conn_pool = table.conn_pool
         if terms or kw_terms:
             logic = AND(*terms, **kw_terms)
             self._value = f'WHERE {logic}'
@@ -34,3 +36,7 @@ class Where(QueryBase):
     def delete(self, *tables):
         """"""
         return Delete(self, tables)
+
+    def exe(self):
+        """Shortcut to call `where().select().exe()`. You should always know that `Where` object isn't `Query` object"""
+        return self.select().exe()

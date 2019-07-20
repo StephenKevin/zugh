@@ -1,20 +1,25 @@
+from query.core import Insert, InsertMulti, Update
 from query.filter import Where
-from query.core import Insert, InsertMulti
 from query.others import As
+
+from .db import DataBase
 
 
 class Table():
     """model for table"""
 
-    def __init__(self, name: str, db=None, alias=None):
+    def __init__(self, name: str, db: DataBase = None, alias: str = None):
 
         self.db = db
         self.name = name
         if db:
             self.full_name = f'{db.name}.{self.name}'
+            self.conn_config = db.conn_config
+            self.conn_pool = db.conn_pool
         else:
             self.full_name = self.name
-
+            self.conn_config = None
+            self.conn_pool = None
         if alias:
             self.alias = As(self, alias)
         else:
@@ -26,7 +31,7 @@ class Table():
 
     def select(self, *fields, **alias_fields):
         """select fields from table"""
-        return Where(self).select(*fields, *alias_fields)
+        return self.where().select(*fields, *alias_fields)
 
     def insert(self, **field_values):
         """insert a row into table"""
@@ -98,6 +103,8 @@ class JoinTable(Table):
 
     def __init__(self, primary, join):
         """"""
+        self.conn_config = primary.conn_config
+        self.conn_pool = primary.conn_pool
         if isinstance(primary, JoinTable):
             self.primary = primary.primary
             self.join_list = []

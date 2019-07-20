@@ -2,6 +2,9 @@
 from datetime import date, datetime
 from decimal import Decimal
 
+from db.connection import ConnectConfigError, connect
+from db.query import execute_commit, execute_fetch
+
 from .base import ExpBase
 from .others import As
 
@@ -9,13 +12,40 @@ from .others import As
 class QueryBase(ExpBase):
     """abstract Query class"""
 
-    def commit():
+    def connect_config(self, conn_config: dict = None, pool=None):
+        """A hook for Query object to configure connection"""
+        
+        self.conn_config = conn_config
+        self.conn_pool = pool
+
+    def exe(self):
         """"""
-        # TODO
+        if self.conn_config:
+            with connect(self.conn_config) as conn:
+                result = execute_commit(conn, self)
+        elif self.conn_pool:
+            with self.conn_pool.connect() as conn:
+                result = execute_commit(conn, self)
+        else:
+            raise ConnectConfigError
+        return result
 
 
 class SelectBase(QueryBase):
     """Base for retrieve"""
+
+    def exe(self):
+        """"""
+
+        if self.conn_config:
+            with connect(self.conn_config) as conn:
+                result = execute_fetch(conn, self)
+        elif self.conn_pool:
+            with self.conn_pool.connect() as conn:
+                result = execute_fetch(conn, self)
+        else:
+            raise ConnectConfigError
+        return result
 
 
 class LimitMixin(SelectBase):
@@ -41,6 +71,8 @@ class Select(LimitMixin):
 
     def __init__(self, where, fields: tuple = None, alias_fields: dict = None):
         """"""
+        self.conn_config = where.conn_config
+        self.conn_pool = where.conn_pool
         if fields or alias_fields:
             fs = [str(f) for f in fields]
             af = [str(As(f, a)) for a, f in alias_fields.items()]
@@ -49,7 +81,7 @@ class Select(LimitMixin):
         else:
             fields_str = '*'
 
-        self._value = f'SELECT {fields_str} FROM {where._tb} {where}'
+        self._value = f'SELECT {fields_str} FROM {where.table} {where}'
 
     def order_by(self, *fields):
         return OrderBy(self, fields)
@@ -61,6 +93,9 @@ class Select(LimitMixin):
 class OrderBy(LimitMixin):
 
     def __init__(self, select, fields):
+
+        self.conn_config = select.conn_config
+        self.conn_pool = select.conn_pool
         f_str = []
         for f in fields:
             if f.startswith('-'):
@@ -75,6 +110,9 @@ class GroupBy(LimitMixin):
     """"""
 
     def __init__(self, select, fields):
+
+        self.conn_config = select.conn_config
+        self.conn_pool = select.conn_pool
         self._value = f"{select} GROUP BY {','.join(fields)}"
 
     def order_by(self, *fields):
@@ -85,6 +123,9 @@ class Limit(SelectBase):
 
     def __init__(self, select, length, offset=None):
         """Limit"""
+
+        self.conn_config = select.conn_config
+        self.conn_pool = select.conn_pool
         if offset:
             self._value = f'{select} LIMIT {offset}, {length}'
         else:
@@ -95,6 +136,9 @@ class Update(QueryBase):
     """"""
 
     def __init__(self, where, kwargs):
+
+        self.conn_config = where.conn_config
+        self.conn_pool = where.conn_pool
         kv = []
         for k, v in kwargs.items():
             k = k.replace('__', '.')
@@ -103,18 +147,21 @@ class Update(QueryBase):
             else:
                 kv.append(f'{k} = {v}')
         kv_str = ', '.join(kv)
-        self._value = f"UPDATE {where._tb} SET {kv_str} {where}"
+        self._value = f"UPDATE {where.table} SET {kv_str} {where}"
 
 
 class Delete(QueryBase):
     """"""
 
-    def __init__(self, where, tables):
+    def __init__(self, where, tables=None):
+
+        self.conn_config = where.conn_config
+        self.conn_pool = where.conn_pool
         if tables:
             tables_str = ','.join([str(tb) for tb in tables])
-            self._value = f"DELETE {tables_str} FROM {where._tb} {where}"
+            self._value = f"DELETE {tables_str} FROM {where.table} {where}"
         else:
-            self._value = f"DELETE FROM {where._tb} {where}"
+            self._value = f"DELETE FROM {where.table} {where}"
 
 
 class InsertBase(QueryBase):
@@ -138,6 +185,9 @@ class Insert(InsertBase):
     """"""
 
     def __init__(self, table, row: dict, ignore=False, duplicate_update=None):
+
+        self.conn_config = table.conn_config
+        self.conn_pool = table.conn_pool
         f_str = self.fields_str(row.keys())
         v_str = self.values_str(row.values())
         if ignore:
@@ -154,7 +204,9 @@ class InsertMulti(InsertBase):
     """query object which insert mutil-rows into table"""
 
     def __init__(self, table, rows: list, ignore=False):
-        
+
+        self.conn_config = table.conn_config
+        self.conn_pool = table.conn_pool
         f_str = self.fields_str(rows[0].keys())
         v_str_list = [self.values_str(r.values()) for r in rows]
         v_str = ', '.join(v_str_list)

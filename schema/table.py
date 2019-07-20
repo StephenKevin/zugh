@@ -11,10 +11,14 @@ class Table():
         self.db = db
         self.name = name
         if db:
-            self.full_name = db.name + self.name
+            self.full_name = f'{db.name}.{self.name}'
         else:
             self.full_name = self.name
-        self.alias = As(self, alias)
+
+        if alias:
+            self.alias = As(self, alias)
+        else:
+            alias = ''
 
     def where(self, *terms, **kw_terms):
         """return a `Where` query object"""

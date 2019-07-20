@@ -1,7 +1,7 @@
 import pymysql
 
 
-def connect_config(host: str, user: str, password: str = "", database: str = None):
+def connect_config(host: str, user: str, password: str = "", database: str = None, **kwargs):
     """Return a dict including config for connection. For more parameters, please refer to `pymysql.connect()`"""
 
     config = dict(host=host, user=user)
@@ -9,6 +9,7 @@ def connect_config(host: str, user: str, password: str = "", database: str = Non
         config['password'] = password
     if database:
         config['database'] = database
+    config.update(kwargs)
     return config
 
 

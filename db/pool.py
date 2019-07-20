@@ -1,5 +1,5 @@
-from collections import deque
 from datetime import datetime, timedelta
+from queue import Queue
 
 import pymysql
 
@@ -10,54 +10,71 @@ class PoolConnectContext:
         self.config = config
         self.connection = pymysql.connect(**config)
         self.pool = pool
-        self.pool._idle.append(self)
+        self.life_until = datetime.now() + pool.conn_lifetime
 
     def __enter__(self):
 
-        self.pool._used.append(self)
-        self.pool._idle.remove(self)
         return self.connection
 
     def __exit__(self, exc_type, exc_val, exc_tb):
 
-        self.last_used = datetime.now()
-        self.pool._used.remove(self)
-        self.pool._idle.append(self)
-        self.pool.clear_idle()
+        self.pool._put(self)
+
+    def __del__(self):
+        try:
+            self.connection.close()
+        except Exception as e:
+            pass
 
 
 class ConnectionPool:
 
-    def __init__(self, timeout=60):
+    def __init__(self, max_size=256, conn_lifetime=512):
 
-        self.conn_timeout = timedelta(seconds=timeout)
-        self._idle = deque()
-        self._used = deque()
+        self._pool = Queue(max_size)
+        self.conn_lifetime = timedelta(seconds=conn_lifetime)
 
     def connect_config(self, config: dict):
         """Params for connect to DB"""
 
         self.conn_config = config
 
-    def clear_idle(self):
+    def _put(self, conn_context):
+        """Put conn_context into pool if it still life"""
 
-        refer = datetime.now() - self.conn_timeout
-        idle = deque()
-        for conn_context in self._idle:
-            if conn_context.connection.open:
-                if refer < conn_context.last_used:
-                    idle.append(conn_context)
-                else:
-                    conn_context.connection.close()
-        self._idle = idle
+        if datetime.now() > conn_context.life_until:
+            del conn_context
+            return False
+        if not conn_context.connection.open:
+            del conn_context
+            return False
+        try:
+            self._pool.put_nowait(conn_context)
+        except Exception as e:
+            del conn_context
+            return False
+        return True
 
     def connect(self):
         """Return a PoolConnectContext instance"""
 
-        refer = datetime.now() - self.conn_timeout
-        for conn_context in self._idle:
-            if refer < conn_context.last_used and conn_context.connection.open:
-                return conn_context
+        try:
+            conn_context = self._pool.get_nowait()
+            if datetime.now() > conn_context.life_until:
+                del conn_context
+            elif not conn_context.connection.open:
+                del conn_context
+            else:
+                conn_context = PoolConnectContext(self.conn_config, self)
+        except Exception as e:
+            conn_context = PoolConnectContext(self.conn_config, self)
 
-        conn_context = PoolConnectContext(self.conn_config, self)
         return conn_context
+
+    def size(self):
+        return self._pool.qsize()
+
+    def __del__(self):
+        while not self._pool.empty():
+            conn_context = self._pool.get_nowait()
+            del conn_context

@@ -2,8 +2,8 @@
 from datetime import date, datetime
 from decimal import Decimal
 
-from db.connection import ConnectConfigError, connect
-from db.query import execute_commit, execute_fetch
+from zugh.db.connection import ConnectConfigError, connect
+from zugh.db.query import execute_commit, execute_fetch
 
 from .base import ExpBase
 from .others import As

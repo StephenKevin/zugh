@@ -1,6 +1,6 @@
-from db.connection import ConnectConfigError, connect
-from db.pool import ConnectionPool
-from db.query import execute
+from zugh.db.connection import ConnectConfigError, connect
+from zugh.db.pool import ConnectionPool
+from zugh.db.query import execute
 
 
 class DataBase:

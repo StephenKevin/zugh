@@ -1,6 +1,6 @@
-from query.core import Insert, InsertMulti, Update
-from query.filter import Where
-from query.others import As
+from zugh.query.core import Insert, InsertMulti, Update
+from zugh.query.filter import Where
+from zugh.query.others import As
 
 from .db import DataBase
 

@@ -47,6 +47,8 @@
 
 Work in progress.
 
+Now we support MySQL only.
+
 ## Required
 
 - Python >= 3.6
@@ -54,11 +56,11 @@ Work in progress.
 
 ## Licence
 
-**MIT**.
+MIT.
 
 ## Install
 
-use pip:
+Use pip:
 
 ```sh
 pip install zugh
@@ -66,7 +68,7 @@ pip install zugh
 
 # Usage
 
->Attention !\
+>Note !\
 >The time of writing each part of this document is out of order. So the results before and after the execution of SQL may not match. Nevertheless, I recommend that you start reading from scratch and try the code.
 
 ## Connection
@@ -84,26 +86,25 @@ pip install zugh
 
 ```py
 >>> from zugh.db.pool import ConnectionPool
->>> pool = ConnectionPool()
->>> pool.connect_config(conn_config)
+>>> pool = ConnectionPool(conn_config)
 ```
 
 ## Database
 
-create a databses:
+Create a databses:
 
 ```py
 >>> from zugh.schema.db import DataBase
->>> db = DataBase('zugh')
->>> db.connect_config(config=conn_config) # or db.connect_config(pool=pool)
+>>> db = DataBase('zugh', conn_config=conn_config)
+# or db = DataBase('zugh', pool=pool)
 >>> db.create()
 ```
 
 ## Table
 
-reate a table
+Create a table.
 
-We didn't implement APIs to create a table yet, so just execute SQL in a connection:
+We haven't implemented those APIs to create a table yet, so just execute SQL in a connection:
 
 ```py
 >>> from zugh.db import connect
@@ -121,7 +122,7 @@ CREATE TABLE zugh.users (
             cursor.execute(sql)
 ```
 
-initial a `Table` object:
+Initial a `Table` object:
 
 ```py
 >>> from zugh.schema.table import Table
@@ -130,16 +131,18 @@ initial a `Table` object:
 
 ## Query Object
 
-- `zugh.query.core.Select`
+`zugh.query.core.QueryBase` provide a base class for Query class below:
+
+- `zugh.query.core.SelectBase`
 - `zugh.query.core.Update`
 - `zugh.query.core.Insert`
 - `zugh.query.core.Delete`
 - or subclass of above class
 
-Query object is a instance of above class. If they were printed, a string of SQL statement would output.If configure properly, they can call `.exe()` method to execute. Usually, you don't use them
+`Query object` is a instance of above class. If they were printed, a string of SQL statement would output.If configure properly, they can call `.exe()` method to execute. Usually, you don't use them
 directly.
 
-Mostly, you would initial a `zugh.schema.table.Table` instance and call relative method, then will return a new Query object.
+Mostly, you would initial a `zugh.schema.table.Table` instance and call relative method, then will return a new `Query object`.
 
 Dangerous queries, such as `update`, `delete` or similar mothed are expose after `Table.where()` method.
 
@@ -147,13 +150,13 @@ Dangerous queries, such as `update`, `delete` or similar mothed are expose after
 >>> q_1 = tb.where().select()
 >>> type(q_1)
 <class 'zugh.query.core.Select'>
->>> q_2 = tb.where().update()
+>>> q_2 = tb.where().update(age=10)
 >>> type(q_2)
 <class 'zugh.query.core.Update'>
 >>> q_3 = tb.where().delete()
 >>> type(q_3)
 <class 'zugh.query.core.Delete'>
->>> q_4 = tb.insert()
+>>> q_4 = tb.insert(dict(age=10, score=18))
 >>> type(q_4)
 <class 'zugh.query.core.Insert'>
 >>> q_5 = q_1.order_by()
@@ -291,22 +294,22 @@ age>3 AND age<20
 
 We use class or their instance to deal with compare express.You can find them in `zugh.query.condition` module.
 
-| SQL Operator | Python Class/Instance/Operator |
-| ------------ | ------------------------------ |
-| =            | `ge`, `=`                      |
-| !=           | `ne`                           |
-| >            | `gt`                           |
-| >=           | `ge`                           |
-| <            | `lt`                           |
-| <=           | `le`                           |
-| IN           | `In`                           |
-| NOT IN       | `NIn`                          |
-| LIKE         | `like`                         |
-| NOT LIKE     | `unlike`                       |
-| IS NULL      | `NULL`                         |
-| IS NOT NULL  | `NOT_NULL`                     |
+| SQL Operator | Python Class/Instance/Operator |           example            |
+| ------------ | ------------------------------ | ---------------------------- |
+| =            | `eq`, `=`                      | .where(name='lisa')          |
+| !=           | `ne`                           | .where(name=ne('lisa'))      |
+| >            | `gt`                           | .where(amount=gt(9))         |
+| >=           | `ge`                           | .where(amount=ge(9))         |
+| <            | `lt`                           | .where(amount=lt(6))         |
+| <=           | `le`                           | .where(amount=le(5))         |
+| IN           | `In`                           | .where(id=In(1,2,3,4))       |
+| NOT IN       | `NIn`                          | .where(id=NIn(98,34,2))      |
+| LIKE         | `like`                         | .where(name=like('lisa%'))   |
+| NOT LIKE     | `unlike`                       | .where(name=unlike('john%')) |
+| IS NULL      | `NULL`                         | .where(age=NULL)             |
+| IS NOT NULL  | `NOT_NULL`                     | .where(age=NOT_NULL)         |
 
-Thought works, `ge` is meaningless. Formconvenience, you would always use `=` .
+Though works, `eq` is meaningless. For convenience, you would always use `=` .
 
 ```py
 >>> from zugh.query.condition import NOT_NULL, NULL, In, NIn, ge, gt, le, like, lt, ne, unlike
@@ -343,7 +346,7 @@ SELECT max(age) AS max_age FROM zugh.users
 SELECT max(age) AS max_age FROM zugh.users
 ```
 
-We support alias, but the default cursorclass will return query set in tuple. In this case, alias is useless.
+We support alias, but the default `cursorclass` of PyMySQL will return query set in tuple. In this case, alias is useless.
 If you want to return dict, you need to configure connection parameter `cursorclass=pymysql.cursors.DictCursor`. For more information, please refer PyMySQL's documents.
 
 ### Sort
@@ -365,7 +368,7 @@ SELECT * FROM zugh.users  ORDER BY age DESC, score
 
 ### Limit
 
-We use a magic `slice` to act limit/offset, `Select Query`' slice will return a instance of
+We use a magical `slice` to act limit/offset, `Select Query`' slice will return a instance of
 `zugh.query.core.Limit`, which is a subclass of `zugh.query.core.SelectBase`.
 
 ```py
@@ -381,9 +384,13 @@ SELECT * FROM zugh.users LIMIT 2, 2
 SELECT * FROM zugh.users LIMIT 2, 18446744073709551614
 ```
 
-except instances of `Limit`, any instance of `SelectBase` could use slice to return a instance of `Limit`.
+Except for instances of `Limit`, all the others instance of `SelectBase` could use slice to return a instance of `Limit`.
+
+The slice here don't accept negative numbers.
 
 ### Aggregate
+
+We provide some aggregation functions in `zugh.query.aggregate` moulde.
 
 ```py
 >>> from zugh.query.aggregate import Avg, Count, Max, Min, Sum
@@ -398,6 +405,12 @@ SELECT avg(age) FROM zugh.users
 SELECT score, count(id) FROM zugh.users GROUP BY score
 >>> q18.exe()
 (((7, 3), (8, 1), (9, 1)), 3)
+```
+
+You can also use write 'raw' functions as long as you like it, such as:
+
+```py
+q17 = tb.where().select('avg(age)')
 ```
 
 ### Distinct
@@ -421,7 +434,12 @@ SELECT count(DISTINCT age) FROM zugh.users
 
 ### Subquery
 
+At present, `In` and `NIn` express support subquery, it could accept a instance of `SelectBase` as a parameter.But they can not accept instance of `zugh.schema.table.TempTable` as a parameter.
+
+`TempTable` accept a `Select Query` as frist parameter and a alias string as second parameter. It would act like a normal read-only table, you could join it with others, or query data as a new instance `TempTable`.
+
 ```py
+>>> from zugh.schema.table import TempTable
 >>> q22 = tb.where().select(Max('age'))
 >>> print(q22)
 SELECT max(age) FROM zugh.users
@@ -431,11 +449,22 @@ SELECT max(age) FROM zugh.users
 SELECT * FROM zugh.users WHERE age IN (SELECT max(age) FROM zugh.users )
 >>> q23.exe()
 (((5, 23, 7),), 1)
+
+>>> q_t = tb.where(id=gt(2)).select()
+>>> tb_t1 = q_t.as_table('ak') # equal to tb_t1 = TempTable(q_t, 'ak')
+>>> tb_t1
+TempTable(SELECT * FROM zugh.users WHERE id > 2)
+>>> tb_t2 = tb_t1.inner_join(tb2, on='a.user_id = ak.id')
+>>> q_t2 = tb_t2.select()
+>>> print(q_t2)
+SELECT * FROM (SELECT * FROM zugh.users WHERE id > 2) AS ak INNER JOIN zugh.account AS a ON a.user_id = ak.id
+>>> q_t2.exe()
+(((3, 7, 8, 3, 3, Decimal('299.89')), (4, 17, 8, 4, 4, Decimal('192.10'))), 2)
 ```
 
 ### Join In
 
-Let's add a new table and query from 2 joined table:
+Let's add a new table and query from the join table:
 
 ```py
 >>> from zugh.db import connect
@@ -470,9 +499,14 @@ SELECT a.id, a.user_id, a.amount, b.score, b.age FROM zugh.account AS a INNER JO
 (((3, 3, Decimal('299.89'), 8, 7), (4, 4, Decimal('192.10'), 8, 17)), 2)
 ```
 
-We provide `.inner_join()`, `.left_join()` and `.right_join()` methods to support Table join.
+If two underscores are used in the keyword of `where` method, the two underscores will be replaced by solid point.
+For example, a__id will be replaced with a.id. This idea was copied from the Django project.
+
+We provide `Table.inner_join()`, `Table.left_join()` and `Table.right_join()` methods to support Table join.
 
 ### Union
+
+Not implement yet.
 
 ## Update
 
@@ -490,7 +524,8 @@ UPDATE zugh.users SET age = 28 WHERE id = 1
 
 ### F Object
 
-Use F object to update on field or filter.
+Use F object to update on field or filter. F object means that it is a field, not a string.
+F class is a subclass of `ArithmeticBase`. So F objects can perform mathematical operations, and it will return a new `ArithmeticBase` instance.
 
 ```py
 >>> from zugh.query.others import F

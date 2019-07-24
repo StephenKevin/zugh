@@ -47,6 +47,12 @@ class SelectBase(QueryBase):
             raise ConnectConfigError
         return result
 
+    def as_table(self, alias: str):
+        """Return a instance of TempTable"""
+
+        from zugh.schema.table import TempTable
+        return TempTable(self, alias)
+
 
 class LimitMixin(SelectBase):
 

@@ -1,4 +1,6 @@
-from zugh.query.core import Insert, InsertMulti, Update
+from typing import List
+
+from zugh.query.core import Insert, InsertMulti, SelectBase, Update
 from zugh.query.filter import Where
 from zugh.query.others import As
 
@@ -7,6 +9,8 @@ from .db import DataBase
 
 class Table():
     """model for table"""
+
+    read_only = False
 
     def __init__(self, name: str, db: DataBase = None, alias: str = None):
 
@@ -23,7 +27,7 @@ class Table():
         if alias:
             self.alias = As(self, alias)
         else:
-            alias = ''
+            self.alias = ''
 
     def where(self, *terms, **kw_terms):
         """return a `Where` query object"""
@@ -40,11 +44,11 @@ class Table():
     def insert_ignore(self, **field_values):
         return Insert(self, field_values, True)
 
-    def insert_multi(self, rows):
+    def insert_multi(self, rows: List[dict]):
         """insert multi-lines into table"""
         return InsertMulti(self, rows)
 
-    def insert_multi_ignore(self, rows):
+    def insert_multi_ignore(self, rows: List[dict]):
         return InsertMulti(self, rows, True)
 
     def upsert(self, row: dict, update_fv: dict):
@@ -71,14 +75,32 @@ class Table():
         return self.full_name
 
     def __repr__(self):
-        return f"Table('{self}')"
+        return f"Table({self})"
+
+
+class TempTable(Table):
+
+    read_only = True
+
+    def __init__(self, query: SelectBase, alias: str):
+        """TempTable class to support subquery"""
+        self.db = None
+        self.name = f'({query})'
+        self.full_name = self.name
+        self.alias = As(self, alias)
+        self.conn_config = query.conn_config
+        self.conn_pool = query.conn_pool
+
+    def __repr__(self):
+        return f"TempTable{self}"
 
 
 class Join:
 
     join_type = 'JOIN'
 
-    def __init__(self, table, on):
+    def __init__(self, table: Table, on):
+        assert table.alias, f'Joined Table({table}) must have a alias.'
         self.table = table
         self.on = on
 
@@ -99,9 +121,11 @@ class RightJoin(Join):
 
 
 class JoinTable(Table):
-    """"""
+    """class for Join tables"""
 
-    def __init__(self, primary, join):
+    read_only = False
+
+    def __init__(self, primary: Table, join: Join):
         """"""
         self.conn_config = primary.conn_config
         self.conn_pool = primary.conn_pool
@@ -111,9 +135,13 @@ class JoinTable(Table):
             self.join_list.extend(primary.join_list)
             self.join_list.append(join)
         else:
+            assert primary.alias, f'Joined Table({primary}) must have a alias.'
             self.primary = primary
             self.join_list = [join]
 
         j_strs = [str(j) for j in self.join_list]
         self.name = f"{self.primary.alias} {' '.join(j_strs)}"
         self.full_name = self.name
+
+    def __repr__(self):
+        return f"JoinTable({self})"

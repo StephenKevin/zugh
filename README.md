@@ -1,57 +1,62 @@
 # Zugh
 
-[WIP] Access to database in pythonic way
+**[WIP] Access to database in pythonic way**
 
 - [Zugh](#zugh)
-  - [status](#status)
-  - [required](#required)
-  - [install](#install)
+  - [Status](#status)
+  - [Required](#required)
+  - [Licence](#licence)
+  - [Install](#install)
 - [Usage](#usage)
-  - [connection](#connection)
-    - [config](#config)
-    - [pool](#pool)
-  - [database](#database)
-  - [table](#table)
-  - [Query ojbect](#query-ojbect)
-  - [insert](#insert)
-    - [insert a row](#insert-a-row)
-    - [insert ignore](#insert-ignore)
-    - [insert or update](#insert-or-update)
-    - [insert multi rows](#insert-multi-rows)
-  - [select](#select)
-    - [filter](#filter)
-      - [logic express](#logic-express)
-      - [compare](#compare)
-    - [alias](#alias)
-    - [sort](#sort)
-    - [limit](#limit)
-    - [aggregate](#aggregate)
-    - [distinct](#distinct)
-    - [subquery](#subquery)
-    - [join in](#join-in)
-    - [union](#union)
-  - [update](#update)
-    - [F object](#f-object)
-  - [delete](#delete)
-  - [decorator](#decorator)
+  - [Connection](#connection)
+    - [Config](#config)
+    - [Pool](#pool)
+  - [Database](#database)
+  - [Table](#table)
+  - [Query Object](#query-object)
+  - [Insert](#insert)
+    - [Insert a Row](#insert-a-row)
+    - [Insert Ignore](#insert-ignore)
+    - [Insert Or Update](#insert-or-update)
+    - [Insert Multi Rows](#insert-multi-rows)
+  - [Select](#select)
+    - [Filter](#filter)
+      - [Logic Express](#logic-express)
+      - [Compare](#compare)
+    - [Alias](#alias)
+    - [Sort](#sort)
+    - [Limit](#limit)
+    - [Aggregate](#aggregate)
+    - [Distinct](#distinct)
+    - [Subquery](#subquery)
+    - [Join In](#join-in)
+    - [Union](#union)
+  - [Update](#update)
+    - [F Object](#f-object)
+  - [Delete](#delete)
+  - [Decorator](#decorator)
     - [db.query.query](#dbqueryquery)
     - [db.query.transaction](#dbquerytransaction)
-  - [string](#string)
-    - [S object](#s-object)
-  - [math](#math)
+  - [String](#string)
+    - [S Object](#s-object)
+  - [Math](#math)
 
-Zugh is tool for access to DB flexibly in pythonic way. It empower you use complex SQL, but didn't need to write them directly.
+**Zugh** is a tool for access to databases flexibly in pythonic way. It empower you use complex SQL, but didn't need to write them directly.
 
-## status
+## Status
 
 Work in progress.
 
-## required
+## Required
 
 - Python >= 3.6
-- PyMySQl >= 0.9.3
+- PyMySQL >= 0.9.3
 
-## install
+## Licence
+
+**MIT**.
+
+## Install
 
 use pip:
 
@@ -64,27 +69,26 @@ pip install zugh
 >Attention !\
 >The time of writing each part of this document is out of order. So the results before and after the execution of SQL may not match. Nevertheless, I recommend that you start reading from scratch and try the code.
 
-## connection
+## Connection
 
-### config
+### Config
 
 ```py
-from zugh.db.connection import connect_config
-conn_config = connect_config('localhost', 'your_username', 'your_password')
+>>> from zugh.db.connection import connect_config
+>>> conn_config = connect_config('localhost', 'your_username', 'your_password')
 # You can use conn_config dict to configure connection for DdataBase object
 # or initial a connection pool
 ```
 
-### pool
+### Pool
 
 ```py
-from zugh.db.pool import ConnectionPool
-
-pool = ConnectionPool()
-pool.connect_config(conn_config)
+>>> from zugh.db.pool import ConnectionPool
+>>> pool = ConnectionPool()
+>>> pool.connect_config(conn_config)
 ```
 
-## database
+## Database
 
 create a databses:
 
@@ -95,7 +99,7 @@ create a databses:
 >>> db.create()
 ```
 
-## table
+## Table
 
 reate a table
 
@@ -103,7 +107,7 @@ We didn't implement APIs to create a table yet, so just execute SQL in a connect
 
 ```py
 >>> from zugh.db import connect
->>> sql  = """
+>>> sql = """
 CREATE TABLE zugh.users (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `age` int(11) NOT NULL,
@@ -124,18 +128,18 @@ initial a `Table` object:
 >>> tb = Table('users', db)
 ```
 
-## Query ojbect
+## Query Object
 
-- zugh.query.core.Select
-- zugh.query.core.Update
-- zugh.query.core.Insert
-- zugh.query.core.Delete
+- `zugh.query.core.Select`
+- `zugh.query.core.Update`
+- `zugh.query.core.Insert`
+- `zugh.query.core.Delete`
 - or subclass of above class
 
-Query object is a instance of above class. If print them, would output a string of SQL statement.
-If configure properly, they can call `.exe()` method to execute. Usually, you don't use them 
-directly. Mostly, you would initial a `zugh.schema.table.Table` instance and call relative method,
-then will return a new Query object.
+Query object is a instance of above class. If they were printed, a string of SQL statement would output.If configure properly, they can call `.exe()` method to execute. Usually, you don't use them
+directly.
+
+Mostly, you would initial a `zugh.schema.table.Table` instance and call relative method, then will return a new Query object.
 
 Dangerous queries, such as `update`, `delete` or similar mothed are expose after `Table.where()` method.
 
@@ -157,9 +161,9 @@ Dangerous queries, such as `update`, `delete` or similar mothed are expose after
 <class 'zugh.query.core.OrderBy'>
 ```
 
-## insert
+## Insert
 
-### insert a row
+### Insert a Row
 
 ```py
 >>> q1 = tb.insert(age=16, score=7)
@@ -176,7 +180,7 @@ SELECT * FROM zugh.users
 (((1, 16, 7),), 1)
 ```
 
-### insert ignore
+### Insert Ignore
 
 ```py
 >>> q3 = tb.insert_ignore(id=1, age=16, score=7)
@@ -185,7 +189,7 @@ INSERT IGNORE INTO zugh.users (id, age, score) VALUES (1, 16, 7)
 >>> q3.exe() # would show a duplicate key warning
 ```
 
-### insert or update
+### Insert Or Update
 
 You can use `F` object or `values` object to complete complex query.
 
@@ -201,7 +205,7 @@ INSERT INTO zugh.users (id, age, score) VALUES (1, 16, 7) ON DUPLICATE UPDATE ag
 INSERT INTO zugh.users (id, age, score) VALUES (1, 16, 7) ON DUPLICATE UPDATE age = age - 1, score = VALUES(age) + 1
 ```
 
-### insert multi rows
+### Insert Multi Rows
 
 ```py
 >>> rows = [
@@ -220,7 +224,7 @@ INSERT INTO zugh.users (age, score) VALUES (9, 8), (7, 9), (17, 7), (23, 7)
 (((1, 16, 7), (2, 9, 8), (3, 7, 9), (4, 17, 7), (5, 23, 7)), 5)
 ```
 
-## select
+## Select
 
 ```py
 >>> q7 = tb.where(id=3).select()
@@ -235,13 +239,13 @@ SELECT id, age FROM zugh.users
 (((1, 16), (2, 9), (3, 7), (4, 17), (5, 23)), 5)
 ```
 
-### filter
+### Filter
 
 the `Table.where()` method of Table instance act as a filter.
 
 If don't need to filter table, You can call `Table.select()` directly. It is a shortup of `Table.where().select()`.
 
-#### logic express
+#### Logic Express
 
 ```py
 >>> from zugh.query.logic import AND, OR, L
@@ -283,7 +287,26 @@ age>3 AND age<20
 (id>3 AND id<7) OR (age>3 AND age<20)
 ```
 
-#### compare
+#### Compare
+
+We use class or their instance to deal with compare express.You can find them in `zugh.query.condition` module.
+
+| SQL Operator | Python Class/Instance/Operator |
+| ------------ | ------------------------------ |
+| =            | `ge`, `=`                      |
+| !=           | `ne`                           |
+| >            | `gt`                           |
+| >=           | `ge`                           |
+| <            | `lt`                           |
+| <=           | `le`                           |
+| IN           | `In`                           |
+| NOT IN       | `NIn`                          |
+| LIKE         | `like`                         |
+| NOT LIKE     | `unlike`                       |
+| IS NULL      | `NULL`                         |
+| IS NOT NULL  | `NOT_NULL`                     |
+
+Thought works, `ge` is meaningless. Formconvenience, you would always use `=` .
 
 ```py
 >>> from zugh.query.condition import NOT_NULL, NULL, In, NIn, ge, gt, le, like, lt, ne, unlike
@@ -308,7 +331,7 @@ SELECT id, score FROM zugh.users WHERE id IN (1,3,5,7,9)
 SELECT * FROM zugh.users WHERE score IS NULL
 ```
 
-### alias
+### Alias
 
 ```py
 >>> from zugh.query.others import As
@@ -323,7 +346,7 @@ SELECT max(age) AS max_age FROM zugh.users
 We support alias, but the default cursorclass will return query set in tuple. In this case, alias is useless.
 If you want to return dict, you need to configure connection parameter `cursorclass=pymysql.cursors.DictCursor`. For more information, please refer PyMySQL's documents.
 
-### sort
+### Sort
 
 ```py
 >>> q15 = tb.where().select().order_by('age')
@@ -340,7 +363,7 @@ SELECT * FROM zugh.users  ORDER BY age DESC, score
 (((5, 23, 7), (4, 17, 7), (1, 16, 7), (2, 9, 8), (3, 7, 9)), 5)
 ```
 
-### limit
+### Limit
 
 We use a magic `slice` to act limit/offset, `Select Query`' slice will return a instance of
 `zugh.query.core.Limit`, which is a subclass of `zugh.query.core.SelectBase`.
@@ -360,7 +383,7 @@ SELECT * FROM zugh.users LIMIT 2, 18446744073709551614
 
 except instances of `Limit`, any instance of `SelectBase` could use slice to return a instance of `Limit`.
 
-### aggregate
+### Aggregate
 
 ```py
 >>> from zugh.query.aggregate import Avg, Count, Max, Min, Sum
@@ -377,7 +400,7 @@ SELECT score, count(id) FROM zugh.users GROUP BY score
 (((7, 3), (8, 1), (9, 1)), 3)
 ```
 
-### distinct
+### Distinct
 
 ```py
 from zugh.query.others import distinct
@@ -396,7 +419,7 @@ SELECT DISTINCT age, score FROM zugh.users
 SELECT count(DISTINCT age) FROM zugh.users
 ```
 
-### subquery
+### Subquery
 
 ```py
 >>> q22 = tb.where().select(Max('age'))
@@ -410,9 +433,9 @@ SELECT * FROM zugh.users WHERE age IN (SELECT max(age) FROM zugh.users )
 (((5, 23, 7),), 1)
 ```
 
-### join in
+### Join In
 
-let's add a new table:
+Let's add a new table and query from 2 joined table:
 
 ```py
 >>> from zugh.db import connect
@@ -447,11 +470,11 @@ SELECT a.id, a.user_id, a.amount, b.score, b.age FROM zugh.account AS a INNER JO
 (((3, 3, Decimal('299.89'), 8, 7), (4, 4, Decimal('192.10'), 8, 17)), 2)
 ```
 
-We provide .inner_join(), .left_join() and .right_join() methods to support Table join.
+We provide `.inner_join()`, `.left_join()` and `.right_join()` methods to support Table join.
 
-### union
+### Union
 
-## update
+## Update
 
 ```py
 >>> tb.where(id=1).select().exe()
@@ -465,7 +488,7 @@ UPDATE zugh.users SET age = 28 WHERE id = 1
 (((1, 28, 7),), 1)
 ```
 
-### F object
+### F Object
 
 Use F object to update on field or filter.
 
@@ -490,7 +513,7 @@ SELECT * FROM zugh.users WHERE score > age * 2
 ((), 0)
 ```
 
-## delete
+## Delete
 
 ```py
 >>> tb.where(id=5).select().exe()
@@ -504,7 +527,7 @@ DELETE FROM zugh.users WHERE id = 5
 ((), 0)
 ```
 
-## decorator
+## Decorator
 
 ### db.query.query
 
@@ -515,11 +538,11 @@ it would execute a Query object. For example:
 >>> from zugh.query.aggregate import Max
 >>> from zugh.db.query import query
 
-@query()
-def query_max_score():
-  q1 = tb.where().select(Max('score'))
-  q2 = tb.where(score=In(q1)).select()
-  return q2
+>>> @query()
+    def query_max_score():
+      q1 = tb.where().select(Max('score'))
+      q2 = tb.where(score=In(q1)).select()
+      return q2
 
 >>> query_max_score()
 (((1, 26, 13),), 1)
@@ -530,7 +553,7 @@ configure connection, you can pass a `conn_config` dict  or a connection pool to
 
 ### db.query.transaction
 
-`transaction` decorator wrap a function which return a list of Query ojbect. When call the wrapped
+`transaction` decorator wrap a function which return a list of `Query ojbect`. When call the wrapped
 function, it would execute them as a transaction. If transaction succeed, return True, otherwise
 return False.
 
@@ -550,21 +573,22 @@ def mv_score():
 True
 ```
 
-## string
+## String
 
-Some string function awailable in zugh.query.string module.
+Some string function awailable in `zugh.query.string` module.
 
 concat 2 field:
 
 ```py
->>> q24 = tb.where().select(Substring('age', 'score'))
+from zugh.query.string import Concat, S, Substring
+>>> q24 = tb.where().select(Concat('age', 'score'))
 >>> print(q24)
-SELECT substring(age, score) FROM zugh.users
+SELECT concat(age, score) FROM zugh.users
 ```
 
-### S object
+### S Object
 
-In string functions, str meaning field name. So you must use S object to point out that it is a str instead of field name.
+In string functions, str meaning field name instead of string. You should use S object to represent string.
 
 ```py
 from zugh.query.string import Concat, S, Substring
@@ -578,6 +602,6 @@ SELECT concat('PRI-', age) FROM zugh.users
 SELECT substring(age, 2) FROM zugh.users
 ```
 
-## math
+## Math
 
-Some math functions are awailable in zugh.query.math module.
+Some math functions are awailable in `zugh.query.math` module.

@@ -81,7 +81,10 @@ class Select(LimitMixin):
         else:
             fields_str = '*'
 
-        self._value = f'SELECT {fields_str} FROM {where.table} {where}'
+        if str(where):
+            self._value = f'SELECT {fields_str} FROM {where.table} {where}'
+        else:
+            self._value = f'SELECT {fields_str} FROM {where.table}'
 
     def order_by(self, *fields):
         return OrderBy(self, fields)

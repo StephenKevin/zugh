@@ -60,14 +60,17 @@ class ComplexLogicBase(LogicBase):
             self._add(L(**{k: v}))
 
         t_list = []
-        for t in self:
-            if isinstance(t, ComplexLogicBase):
-                t_str = f'({t})'
-            else:
-                t_str = f'{t}'
-            t_list.append(t_str)
-        oper = f' {self.__class__.__name__} '
-        self._value = oper.join(t_list)
+        if len(self)==1:
+            self._value = f'{self[0]}'
+        else:
+            for t in self:
+                if isinstance(t, ComplexLogicBase):
+                    t_str = f'({t})'
+                else:
+                    t_str = f'{t}'
+                t_list.append(t_str)
+            oper = f' {self.__class__.__name__} '
+            self._value = oper.join(t_list)
 
     def __iter__(self):
         return iter(self._terms)

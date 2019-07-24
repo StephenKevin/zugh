@@ -20,10 +20,10 @@ class DataBase:
         self.conn_config = config
         self.conn_pool = pool
 
-    def create(self, name):
+    def create(self):
         """Create database"""
 
-        sql = f'CREATE DATABASE {name}'
+        sql = f'CREATE DATABASE {self}'
         if self.conn_config:
             with connect(self.conn_config) as conn:
                 result = execute(conn, sql)

@@ -1,6 +1,6 @@
 from typing import List
 
-from zugh.query.core import Insert, InsertMulti, SelectBase, Update
+from zugh.query.core import Insert, SelectBase, Update
 from zugh.query.filter import Where
 from zugh.query.others import As
 
@@ -39,25 +39,25 @@ class Table():
 
     def insert(self, **field_values):
         """insert a row into table"""
-        return Insert(self, field_values)
+        return Insert(self, row=field_values)
 
     def insert_ignore(self, **field_values):
-        return Insert(self, field_values, True)
+        return Insert(self, row=field_values, ignore=True)
 
     def insert_multi(self, rows: List[dict]):
         """insert multi-lines into table"""
-        return InsertMulti(self, rows)
+        return Insert(self, rows=rows)
 
     def insert_multi_ignore(self, rows: List[dict]):
-        return InsertMulti(self, rows, True)
+        return Insert(self, rows=rows, ignore=True)
 
     def upsert(self, row: dict, update_fv: dict):
         """insert a row or update it when duplicate key"""
-        return Insert(self, row, duplicate_update=update_fv)
+        return Insert(self, row=row, duplicate_update=update_fv)
 
-    def upsert_multi(self, rows):
+    def upsert_multi(self, rows: List[dict], update_fv: dict):
         """"""
-        # TODO
+        return Insert(self, rows=rows, duplicate_update=update_fv)
 
     def join(self, table, on):
         return JoinTable(self, Join(table, on))

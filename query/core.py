@@ -1,6 +1,7 @@
 
 from datetime import date, datetime
 from decimal import Decimal
+from typing import List
 
 from zugh.db.connection import ConnectConfigError, connect
 from zugh.db.query import execute_commit, execute_fetch
@@ -14,7 +15,7 @@ class QueryBase(ExpBase):
 
     def connect_config(self, conn_config: dict = None, pool=None):
         """A hook for Query object to configure connection"""
-        
+
         self.conn_config = conn_config
         self.conn_pool = pool
 
@@ -173,7 +174,29 @@ class Delete(QueryBase):
             self._value = f"DELETE FROM {where.table} {where}"
 
 
-class InsertBase(QueryBase):
+class Insert(QueryBase):
+    """"""
+
+    def __init__(self, table, row: dict = None, rows: List[dict] = None, ignore=False, duplicate_update=None):
+
+        self.conn_config = table.conn_config
+        self.conn_pool = table.conn_pool
+        if row:
+            f_str = self.fields_str(row.keys())
+            v_str = self.values_str(row.values())
+        elif rows:
+            f_str = self.fields_str(rows[0].keys())
+            v_str_list = [self.values_str(r.values()) for r in rows]
+            v_str = ', '.join(v_str_list)
+
+        if ignore:
+            self._value = f'INSERT IGNORE INTO {table} {f_str} VALUES {v_str}'
+        elif duplicate_update:
+            up_list = [f'{k} = {v}' for k, v in duplicate_update.items()]
+            up_str = ', '.join(up_list)
+            self._value = f'INSERT INTO {table} {f_str} VALUES {v_str} ON DUPLICATE KEY UPDATE {up_str}'
+        else:
+            self._value = f'INSERT INTO {table} {f_str} VALUES {v_str}'
 
     @staticmethod
     def fields_str(fields):
@@ -188,38 +211,3 @@ class InsertBase(QueryBase):
             else:
                 vs.append(str(v))
         return f"({', '.join(vs)})"
-
-
-class Insert(InsertBase):
-    """"""
-
-    def __init__(self, table, row: dict, ignore=False, duplicate_update=None):
-
-        self.conn_config = table.conn_config
-        self.conn_pool = table.conn_pool
-        f_str = self.fields_str(row.keys())
-        v_str = self.values_str(row.values())
-        if ignore:
-            self._value = f'INSERT IGNORE INTO {table} {f_str} VALUES {v_str}'
-        elif duplicate_update:
-            up_list = [f'{k} = {v}' for k, v in duplicate_update.items()]
-            up_str = ', '.join(up_list)
-            self._value = f'INSERT INTO {table} {f_str} VALUES {v_str} ON DUPLICATE UPDATE {up_str}'
-        else:
-            self._value = f'INSERT INTO {table} {f_str} VALUES {v_str}'
-
-
-class InsertMulti(InsertBase):
-    """query object which insert mutil-rows into table"""
-
-    def __init__(self, table, rows: list, ignore=False):
-
-        self.conn_config = table.conn_config
-        self.conn_pool = table.conn_pool
-        f_str = self.fields_str(rows[0].keys())
-        v_str_list = [self.values_str(r.values()) for r in rows]
-        v_str = ', '.join(v_str_list)
-        if ignore:
-            self._value = f'INSERT IGNORE INTO {table} {f_str} VALUES {v_str}'
-        else:
-            self._value = f'INSERT INTO {table} {f_str} VALUES {v_str}'

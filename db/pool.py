@@ -29,15 +29,11 @@ class PoolConnectContext:
 
 class ConnectionPool:
 
-    def __init__(self, max_size=256, conn_lifetime=512):
+    def __init__(self, conn_config: dict, max_size=256, conn_lifetime=512):
 
+        self.conn_config = conn_config
         self._pool = Queue(max_size)
         self.conn_lifetime = timedelta(seconds=conn_lifetime)
-
-    def connect_config(self, config: dict):
-        """Params for connect to DB"""
-
-        self.conn_config = config
 
     def _put(self, conn_context):
         """Put conn_context into pool if it still life"""

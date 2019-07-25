@@ -8,17 +8,14 @@ class DataBase:
     conn_config = None
     conn_pool = None
 
-    def __init__(self, name: str):
+    def __init__(self, name: str, conn_config: dict = None, pool: ConnectionPool = None):
+
         self.name = name
+        self.conn_config = conn_config
+        self.conn_pool = pool
 
     def __str__(self):
         return self.name
-
-    def connect_config(self, config: dict = None, pool: ConnectionPool = None):
-        """connection configuration"""
-
-        self.conn_config = config
-        self.conn_pool = pool
 
     def create(self):
         """Create database"""

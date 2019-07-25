@@ -147,6 +147,7 @@ class Update(QueryBase):
 
     def __init__(self, where, kwargs):
 
+        assert kwargs, 'Update() params error. No field to update!'
         self.conn_config = where.conn_config
         self.conn_pool = where.conn_pool
         kv = []
@@ -188,6 +189,8 @@ class Insert(QueryBase):
             f_str = self.fields_str(rows[0].keys())
             v_str_list = [self.values_str(r.values()) for r in rows]
             v_str = ', '.join(v_str_list)
+        else:
+            raise Exception('Insert() params error. No content to insert.')
 
         if ignore:
             self._value = f'INSERT IGNORE INTO {table} {f_str} VALUES {v_str}'

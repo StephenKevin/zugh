@@ -3,8 +3,8 @@ from .core import Delete, Select, Update
 from .logic import AND
 
 
-class Where(ExpBase):
-    """"""
+class WhereBasic(ExpBase):
+    """Filter which have basic method, can not operate `update` or `delete`"""
 
     def __init__(self, table, terms=None, kw_terms=None):
         """
@@ -29,6 +29,14 @@ class Where(ExpBase):
     def order_by(self, *fields):
         return self.select().order_by(*fields)
 
+    def exe(self):
+        """Shortcut to call `where().select().exe()`. You should always know that `Where` object isn't `Query` object"""
+        return self.select().exe()
+
+
+class Where(WhereBasic):
+    """Filter which have full method"""
+
     def update(self, **field_values):
         """"""
         return Update(self, field_values)
@@ -36,7 +44,3 @@ class Where(ExpBase):
     def delete(self, *tables):
         """"""
         return Delete(self, tables)
-
-    def exe(self):
-        """Shortcut to call `where().select().exe()`. You should always know that `Where` object isn't `Query` object"""
-        return self.select().exe()

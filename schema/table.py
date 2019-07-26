@@ -1,16 +1,40 @@
 from typing import List
 
 from zugh.query.core import Insert, SelectBase, Update
-from zugh.query.filter import Where
+from zugh.query.filter import Where, WhereBasic
 from zugh.query.others import As
 
 from .db import DataBase
 
 
-class Table():
-    """model for table"""
+class TableBase:
 
-    read_only = False
+    def where(self, *terms, **kw_terms):
+        """return a `Where` query object"""
+        return Where(self, terms, kw_terms)
+
+    def select(self, *fields, **alias_fields):
+        """select fields from table"""
+        return self.where().select(*fields, *alias_fields)
+
+    def join(self, table, on):
+        return JoinTable(self, Join(table, on))
+
+    def inner_join(self, table, on):
+        return JoinTable(self, InnerJoin(table, on))
+
+    def left_join(self, table, on):
+        return JoinTable(self, LeftJoin(table, on))
+
+    def right_join(self, table, on):
+        return JoinTable(self, RightJoin(table, on))
+
+    def __str__(self):
+        return self.full_name
+
+
+class Table(TableBase):
+    """model for table"""
 
     def __init__(self, name: str, db: DataBase = None, alias: str = None):
 
@@ -28,14 +52,6 @@ class Table():
             self.alias = As(self, alias)
         else:
             self.alias = ''
-
-    def where(self, *terms, **kw_terms):
-        """return a `Where` query object"""
-        return Where(self, terms, kw_terms)
-
-    def select(self, *fields, **alias_fields):
-        """select fields from table"""
-        return self.where().select(*fields, *alias_fields)
 
     def insert(self, **field_values):
         """insert a row into table"""
@@ -59,28 +75,11 @@ class Table():
         """"""
         return Insert(self, rows=rows, duplicate_update=update_fv)
 
-    def join(self, table, on):
-        return JoinTable(self, Join(table, on))
-
-    def inner_join(self, table, on):
-        return JoinTable(self, InnerJoin(table, on))
-
-    def left_join(self, table, on):
-        return JoinTable(self, LeftJoin(table, on))
-
-    def right_join(self, table, on):
-        return JoinTable(self, RightJoin(table, on))
-
-    def __str__(self):
-        return self.full_name
-
     def __repr__(self):
         return f"Table({self})"
 
 
-class TempTable(Table):
-
-    read_only = True
+class TempTable(TableBase):
 
     def __init__(self, query: SelectBase, alias: str):
         """TempTable class to support subquery"""
@@ -90,6 +89,10 @@ class TempTable(Table):
         self.alias = As(self, alias)
         self.conn_config = query.conn_config
         self.conn_pool = query.conn_pool
+
+    def where(self, *terms, **kw_terms):
+        """return a `Where` query object"""
+        return WhereBasic(self, terms, kw_terms)
 
     def __repr__(self):
         return f"TempTable{self}"
@@ -120,10 +123,8 @@ class RightJoin(Join):
     join_type = 'RIGHT JOIN'
 
 
-class JoinTable(Table):
+class JoinTable(TableBase):
     """class for Join tables"""
-
-    read_only = False
 
     def __init__(self, primary: Table, join: Join):
         """"""

@@ -54,6 +54,12 @@ class SelectBase(QueryBase):
         from zugh.schema.table import TempTable
         return TempTable(self, alias)
 
+    def union(self, other):
+        return Union(self, other)
+
+    def union_all(self, other):
+        return Union(self, other, distinct=False)
+
 
 class LimitMixin(SelectBase):
 
@@ -140,6 +146,21 @@ class Limit(SelectBase):
             self._value = f'{select} LIMIT {offset}, {length}'
         else:
             self._value = f'{select} LIMIT {length}'
+
+
+class Union(LimitMixin):
+
+    def __init__(self, select, other, distinct=True):
+
+        self.conn_config = select.conn_config
+        self.conn_pool = select.conn_pool
+        if distinct:
+            self._value = f'{select} UNION {other}'
+        else:
+            self._value = f'{select} UNION ALL {other}'
+
+    def order_by(self, *fields):
+        return OrderBy(self, fields)
 
 
 class Update(QueryBase):

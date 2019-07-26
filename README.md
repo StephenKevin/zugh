@@ -41,7 +41,7 @@
     - [S Object](#s-object)
   - [Math](#math)
 
-**Zugh** is a tool for access to databases flexibly in pythonic way. It empower you use complex SQL, but didn't need to write them directly.
+**Zugh** is a tool for generating SQL and accessing databases flexibly in pythonic way. It empower you to use complex SQL, but didn't need to write them directly.
 
 ## Status
 
@@ -91,7 +91,7 @@ pip install zugh
 
 ## Database
 
-Create a databses:
+Create a database:
 
 ```py
 >>> from zugh.schema.db import DataBase
@@ -104,7 +104,7 @@ Create a databses:
 
 Create a table.
 
-We haven't implemented those APIs to create a table yet, so just execute SQL in a connection:
+We haven't implemented those APIs to create a table yet, so just execute SQL with a connection:
 
 ```py
 >>> from zugh.db import connect
@@ -201,11 +201,11 @@ from zugh.query.others import F, values
 >>> row = dict(id=1, age=16, score=7)
 >>> q4 = tb.upsert(row, dict(age=9))
 >>> print(q4)
-INSERT INTO zugh.users (id, age, score) VALUES (1, 16, 7) ON DUPLICATE UPDATE age = 9
+INSERT INTO zugh.users (id, age, score) VALUES (1, 16, 7) ON DUPLICATE KEY UPDATE age = 9
 >>> update_fv = dict(age=F('age')-1, score=values('age')+1)
 >>> q5 = tb.upsert(row, update_fv=update_fv)
 >>> print(q5)
-INSERT INTO zugh.users (id, age, score) VALUES (1, 16, 7) ON DUPLICATE UPDATE age = age - 1, score = VALUES(age) + 1
+INSERT INTO zugh.users (id, age, score) VALUES (1, 16, 7) ON DUPLICATE KEY UPDATE age = age - 1, score = VALUES(age) + 1
 ```
 
 ### Insert Multi Rows
@@ -241,6 +241,9 @@ SELECT id, age FROM zugh.users
 >>> q8.exe()
 (((1, 16), (2, 9), (3, 7), (4, 17), (5, 23)), 5)
 ```
+
+By default,  when call `.exe()` of Select Query, it will return a `tuple` which contain queryset and number of rows.
+The format of queryset format is still `tuple`. If you prefer a dict-format queryset, you should pass a parameter `cursorclass=pymysql.cursors.DictCursor` to configure connection. For more infomation, please refer docs of `PyMySQL`.
 
 ### Filter
 
@@ -354,14 +357,14 @@ If you want to return dict, you need to configure connection parameter `cursorcl
 ```py
 >>> q15 = tb.where().select().order_by('age')
 >>> print(q15)
-SELECT * FROM zugh.users  ORDER BY age
+SELECT * FROM zugh.users ORDER BY age
 >>> q15.exe()
 (((3, 7, 9), (2, 9, 8), (1, 16, 7), (4, 17, 7), (5, 23, 7)), 5)
 
 # You can use prefix '-' to sort reverse.
 >>> q16 = tb.where().select().order_by('-age', 'score')
 >>> print(q16)
-SELECT * FROM zugh.users  ORDER BY age DESC, score
+SELECT * FROM zugh.users ORDER BY age DESC, score
 >>> q16.exe()
 (((5, 23, 7), (4, 17, 7), (1, 16, 7), (2, 9, 8), (3, 7, 9)), 5)
 ```
@@ -444,9 +447,9 @@ At present, `In` and `NIn` express support subquery, it could accept a instance 
 >>> print(q22)
 SELECT max(age) FROM zugh.users
 
->>> q23 = tb.where(age=In(q18)).select()
+>>> q23 = tb.where(age=In(q22)).select()
 >>> print(q23)
-SELECT * FROM zugh.users WHERE age IN (SELECT max(age) FROM zugh.users )
+SELECT * FROM zugh.users WHERE age IN (SELECT max(age) FROM zugh.users)
 >>> q23.exe()
 (((5, 23, 7),), 1)
 
@@ -454,6 +457,28 @@ SELECT * FROM zugh.users WHERE age IN (SELECT max(age) FROM zugh.users )
 >>> tb_t1 = q_t.as_table('ak') # equal to tb_t1 = TempTable(q_t, 'ak')
 >>> tb_t1
 TempTable(SELECT * FROM zugh.users WHERE id > 2)
+>>>
+>>> sql2  = """
+CREATE TABLE zugh.account (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `amount` decimal(11,2) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`)
+) Engine=InnoDB DEFAULT CHARSET=utf8mb4;
+"""
+>>> with conn as cn:
+        with cn.cursor() as cursor:
+            cursor.execute(sql2)
+>>> tb2 = Table('account', db, alias='a') # If tend to join table, alias is necessary
+>>> rows2 = (
+  dict(user_id=1, amount='99.89'),
+  dict(user_id=2, amount='292.2'),
+  dict(user_id=3, amount='299.89'),
+  dict(user_id=4, amount='192.1'),
+  dict(user_id=5, amount='183.7'),
+)
+>>> tb2.insert_multi(rows2).exe()
+>>>
 >>> tb_t2 = tb_t1.inner_join(tb2, on='a.user_id = ak.id')
 >>> q_t2 = tb_t2.select()
 >>> print(q_t2)
@@ -467,29 +492,6 @@ SELECT * FROM (SELECT * FROM zugh.users WHERE id > 2) AS ak INNER JOIN zugh.acco
 Let's add a new table and query from the join table:
 
 ```py
->>> from zugh.db import connect
->>> sql2  = """
-CREATE TABLE zugh.account (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `user_id` int(11) NOT NULL,
-  `amount` decimal(11,2) NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id`)
-) Engine=InnoDB DEFAULT CHARSET=utf8mb4;
-"""
->>> conn = connect(conn_config) # return a connection context
->>> with conn as cn:
-        with cn.cursor() as cursor:
-            cursor.execute(sql2)
-
->>> tb2 = Table('account', db, alias='a') # If tend to join table, alias is necessary
->>> rows2 = (
-  dict(user_id=1, amount='99.89'),
-  dict(user_id=2, amount='292.2'),
-  dict(user_id=3, amount='299.89'),
-  dict(user_id=4, amount='192.1'),
-  dict(user_id=5, amount='183.7'),
-)
->>> tb2.insert_multi(rows2).exe()
 >>> tb3 = Table('users', db, alias='b') # If tend to join table, alias is necessary
 >>> tb_i = tb2.inner_join(tb3, on='a.user_id=b.id')
 >>> q_i = tb_i.where(a__id=gt(2)).select('a.id', 'a.user_id', 'a.amount', 'b.score', 'b.age')
@@ -500,13 +502,22 @@ SELECT a.id, a.user_id, a.amount, b.score, b.age FROM zugh.account AS a INNER JO
 ```
 
 If two underscores are used in the keyword of `where` method, the two underscores will be replaced by solid point.
-For example, a__id will be replaced with a.id. This idea was copied from the Django project.
+For example, `a__id` will be replaced with `a.id`. This idea was copied from the Django project.
 
 We provide `Table.inner_join()`, `Table.left_join()` and `Table.right_join()` methods to support Table join.
 
 ### Union
 
-Not implement yet.
+You can call `union` or `union_all` method from `Select object`. For example:
+
+```py
+>>> from zugh.query.condition import gt, lt
+>>> q_u1 = tb.where(id=lt(5)).select()
+>>> q_u2 = tb.where(age=gt(20)).select()
+>>> q_u = q_u1.union_all(q_u2)
+>>> print(q_u)
+SELECT * FROM zugh.users WHERE id < 5 UNION ALL SELECT * FROM zugh.users WHERE age > 20
+```
 
 ## Update
 
@@ -524,8 +535,10 @@ UPDATE zugh.users SET age = 28 WHERE id = 1
 
 ### F Object
 
-Use F object to update on field or filter. F object means that it is a field, not a string.
+F object means that it is a field, not a string. It could be used in `Table.where()` or `Where.update()`.
 F class is a subclass of `ArithmeticBase`. So F objects can perform mathematical operations, and it will return a new `ArithmeticBase` instance.
+
+See the following examples:
 
 ```py
 >>> from zugh.query.others import F
@@ -566,7 +579,7 @@ DELETE FROM zugh.users WHERE id = 5
 
 ### db.query.query
 
-`query` decorator wrap a function which return a Query object. When call the wrapped function,
+`query` decorator wraps a function which return a Query object. When call the wrapped function,
 it would execute a Query object. For example:
 
 ```py
@@ -583,14 +596,13 @@ it would execute a Query object. For example:
 (((1, 26, 13),), 1)
 ```
 
-`query` accept 2 parameters, `conn_config` and `conn_pool`. If the Query object returned don't
+`query` accept 2 parameters: `conn_config` and `conn_pool`. If the Query object returned don't
 configure connection, you can pass a `conn_config` dict  or a connection pool to it.
 
 ### db.query.transaction
 
 `transaction` decorator wrap a function which return a list of `Query ojbect`. When call the wrapped
-function, it would execute them as a transaction. If transaction succeed, return True, otherwise
-return False.
+function, it would execute the list of `Query object` as a transaction. If transaction succeed, return True, otherwise return False.
 
 For example:
 
@@ -623,12 +635,12 @@ SELECT concat(age, score) FROM zugh.users
 
 ### S Object
 
-In string functions, str meaning field name instead of string. You should use S object to represent string.
+In string functions, str meaning field name instead of string. You should use `S object` to represent string.
 
 ```py
 from zugh.query.string import Concat, S, Substring
 >>> q25 = tb.where().select(Concat(S('PRI-'), 'age'))
->>> print(q24)
+>>> print(q25)
 SELECT concat('PRI-', age) FROM zugh.users
 >>> q25.exe()
 ((('PRI-26',), ('PRI-9',), ('PRI-7',), ('PRI-17',)), 4)

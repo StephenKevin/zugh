@@ -89,8 +89,8 @@ class TempTable(TableBase):
         """TempTable class to support subquery"""
         self.db = None
         self.name = f'({query})'
-        self.full_name = self.name
-        self.alias = As(self, alias)
+        self.alias = As(self.name, alias)
+        self.full_name = str(self.alias)
         self.conn_config = query.conn_config
         self.conn_pool = query.conn_pool
 

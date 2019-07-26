@@ -1,6 +1,6 @@
-from typing import List
+from typing import List, Tuple
 
-from zugh.query.core import Insert, SelectBase, Update
+from zugh.query.core import Insert, InsertQuery, SelectBase, Update
 from zugh.query.filter import Where, WhereBasic
 from zugh.query.others import As
 
@@ -74,6 +74,10 @@ class Table(TableBase):
     def upsert_multi(self, rows: List[dict], update_fv: dict):
         """"""
         return Insert(self, rows=rows, duplicate_update=update_fv)
+
+    def insert_from(self, fields: Tuple[str], query):
+        """Insert from subquery"""
+        return InsertQuery(self, fields, query)
 
     def __repr__(self):
         return f"Table({self})"

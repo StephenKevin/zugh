@@ -1,7 +1,7 @@
 
 from datetime import date, datetime
 from decimal import Decimal
-from typing import List
+from typing import List, Tuple
 
 from zugh.db.connection import ConnectConfigError, connect
 from zugh.db.query import execute_commit, execute_fetch
@@ -197,7 +197,7 @@ class Delete(QueryBase):
 
 
 class Insert(QueryBase):
-    """"""
+    """Insert row/rows"""
 
     def __init__(self, table, row: dict = None, rows: List[dict] = None, ignore=False, duplicate_update=None):
 
@@ -235,3 +235,15 @@ class Insert(QueryBase):
             else:
                 vs.append(str(v))
         return f"({', '.join(vs)})"
+
+
+class InsertQuery(Insert):
+    """Insert rows from a subquery"""
+    
+
+    def __init__(self, table, fields: Tuple[str], query):
+
+        self.conn_config = table.conn_config
+        self.conn_pool = table.conn_pool
+        f_str = self.fields_str(fields)
+        self._value = f'INSERT INTO {table} {f_str} {query}'

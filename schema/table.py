@@ -54,29 +54,38 @@ class Table(TableBase):
             self.alias = ''
 
     def insert(self, **field_values):
-        """insert a row into table"""
+        """Retuen a Query object which insert a row. If the Query execute, it will return the last_insert_id"""
         return Insert(self, row=field_values)
 
     def insert_ignore(self, **field_values):
+        """Return a Query object which insert a row if no conflict. If Query object execute, it will return:\n
+            0 -> no change, 1 -> inserted
+        """
         return Insert(self, row=field_values, ignore=True)
 
     def insert_multi(self, rows: List[dict]):
-        """insert multi-lines into table"""
+        """Return Query object which insert multiple-rows. If the Query execute, it will return the number of rows successfully inserted"""
         return Insert(self, rows=rows)
 
     def insert_multi_ignore(self, rows: List[dict]):
+        """Return Query object which insert multiple-rows. If the Query execute, it will return the number of rows successfully inserted"""
         return Insert(self, rows=rows, ignore=True)
 
     def upsert(self, row: dict, update_fv: dict):
-        """insert a row or update it when duplicate key"""
+        """Return a  Query object which insert a row or update it when duplicate key. If the Query object execute, it will return:\n
+        0 -> no change, 1 -> inserted, 2 -> updated
+        """
         return Insert(self, row=row, duplicate_update=update_fv)
 
     def upsert_multi(self, rows: List[dict], update_fv: dict):
-        """"""
+        """Return a Query object which insert multiple rows or update them when duplicate key. If the Query execute, it will return:\n
+        0 -> all rows exist and no change.\n
+        n -> n = (number of updated rows) * 2 + (number of inerted row)
+        """
         return Insert(self, rows=rows, duplicate_update=update_fv)
 
     def insert_from(self, fields: Tuple[str], query):
-        """Insert from subquery"""
+        """Return a Query object which insert multiple rows from subquery. If the Query execute, it will return the number of rows successfully inserted"""
         return InsertQuery(self, fields, query)
 
     def __repr__(self):

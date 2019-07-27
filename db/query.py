@@ -25,6 +25,22 @@ def execute_commit(connection, query):
     return row
 
 
+def execute_insert(connection, query):
+    """Execute INSERT sql and fetch last_insert_id"""
+
+    sql = str(query)
+    try:
+        with connection.cursor() as cursor:
+            row = cursor.execute(sql)
+            last = cursor.execute('SELECT last_insert_id()')
+            last_id = cursor.fetchone()
+        connection.commit()
+    except Exception as e:
+        connection.rollback()
+        raise e
+    return last_id[0]
+
+
 def execute_fetch(connection, query):
     """Execute SELECT sql"""
     sql = str(query)

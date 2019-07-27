@@ -4,7 +4,7 @@ from decimal import Decimal
 from typing import List, Tuple
 
 from zugh.db.connection import ConnectConfigError, connect
-from zugh.db.query import execute_commit, execute_fetch
+from zugh.db.query import execute_commit, execute_fetch, execute_insert
 
 from .base import ExpBase
 from .others import As
@@ -199,11 +199,14 @@ class Delete(QueryBase):
 class Insert(QueryBase):
     """Insert row/rows"""
 
+    fetch_last_id = False
+
     def __init__(self, table, row: dict = None, rows: List[dict] = None, ignore=False, duplicate_update=None):
 
         self.conn_config = table.conn_config
         self.conn_pool = table.conn_pool
         if row:
+            self.fetch_last_id = True
             f_str = self.fields_str(row.keys())
             v_str = self.values_str(row.values())
         elif rows:
@@ -214,8 +217,10 @@ class Insert(QueryBase):
             raise Exception('Insert() params error. No content to insert.')
 
         if ignore:
+            self.fetch_last_id = False
             self._value = f'INSERT IGNORE INTO {table} {f_str} VALUES {v_str}'
         elif duplicate_update:
+            self.fetch_last_id = False
             up_list = [f'{k} = {v}' for k, v in duplicate_update.items()]
             up_str = ', '.join(up_list)
             self._value = f'INSERT INTO {table} {f_str} VALUES {v_str} ON DUPLICATE KEY UPDATE {up_str}'
@@ -236,10 +241,27 @@ class Insert(QueryBase):
                 vs.append(str(v))
         return f"({', '.join(vs)})"
 
+    def exe(self):
+
+        if self.conn_config:
+            with connect(self.conn_config) as conn:
+                if self.fetch_last_id:
+                    result = execute_insert(conn, self)
+                else:
+                    result = execute_commit(conn, self)
+        elif self.conn_pool:
+            with self.conn_pool.connect() as conn:
+                if self.fetch_last_id:
+                    result = execute_insert(conn, self)
+                else:
+                    result = execute_commit(conn, self)
+        else:
+            raise ConnectConfigError
+        return result
+
 
 class InsertQuery(Insert):
     """Insert rows from a subquery"""
-    
 
     def __init__(self, table, fields: Tuple[str], query):
 

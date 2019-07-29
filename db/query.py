@@ -38,7 +38,10 @@ def execute_insert(connection, query):
     except Exception as e:
         connection.rollback()
         raise e
-    return last_id[0]
+    if isinstance(last_id, tuple):
+        return last_id[0]
+    else:
+        return last_id['last_insert_id()']
 
 
 def execute_fetch(connection, query):

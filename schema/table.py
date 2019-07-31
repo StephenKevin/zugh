@@ -15,7 +15,7 @@ class TableBase:
 
     def select(self, *fields, **alias_fields):
         """select fields from table"""
-        return self.where().select(*fields, *alias_fields)
+        return self.where().select(*fields, **alias_fields)
 
     def join(self, table, on):
         return JoinTable(self, Join(table, on))

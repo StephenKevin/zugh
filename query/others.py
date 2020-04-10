@@ -20,9 +20,3 @@ class values(ArithmeticBase):
     def __init__(self, field):
         """values object for VALUES keyword"""
         self._value = f'VALUES({field})'
-
-
-class As(ExpBase):
-
-    def __init__(self, entity, name: str):
-        self._value = f'{entity} AS {name}'

@@ -2,7 +2,7 @@ from typing import List, Tuple
 
 from zugh.query.core import Insert, InsertQuery, SelectBase, Update
 from zugh.query.filter import Where, WhereBasic
-from zugh.query.others import As
+from zugh.query.base import As
 
 from .db import DataBase
 
@@ -52,6 +52,9 @@ class Table(TableBase):
             self.alias = As(self, alias)
         else:
             self.alias = ''
+
+    def set_alias(self, alias: str):
+        self.alias = As(alias)
 
     def insert(self, **field_values):
         """Retuen a Query object which insert a row. If the Query execute, it will return the last_insert_id"""

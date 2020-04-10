@@ -3,6 +3,15 @@ class ExpBase:
     def __str__(self):
         return self._value
 
+    def alias(self, name: str):
+        return As(self, name)
+
+
+class As():
+
+    def __init__(self, entity, name: str):
+        self._value = f'{entity} AS {name}'
+
 
 class ArithmeticBase(ExpBase):
     """Base for arithmetic operation"""

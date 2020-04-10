@@ -6,8 +6,7 @@ from typing import List, Tuple
 from zugh.db.connection import ConnectConfigError, connect
 from zugh.db.query import execute_commit, execute_fetch, execute_insert
 
-from .base import ExpBase
-from .others import As
+from .base import ExpBase, As
 
 
 class QueryBase(ExpBase):
